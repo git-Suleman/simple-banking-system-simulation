@@ -29,6 +29,8 @@ void Account::deposit(double amount)
     process_table.addProcess(process_id, transaction_id);
     Transaction::log_transaction(transaction, "transactions.txt");
 
+    process_table.printProcesses();
+
     pthread_mutex_unlock(&mutex);
 
     process_table.waitAndRemoveProcess(process_id);
@@ -51,6 +53,8 @@ void Account::withdraw(double amount)
     process_table.addProcess(process_id, transaction_id);
     Transaction transaction(transaction_id, account_id, "Withdrawal", amount);
     Transaction::log_transaction(transaction, "transactions.txt");
+
+    process_table.printProcesses();
 
     pthread_mutex_unlock(&mutex);
 
@@ -177,17 +181,16 @@ bool Account::update_account(Account accounts[], int account_id, double new_bala
 }
 
 // Delete an account from the array
-bool Account::delete_account(Account accounts[], int &count, int account_id)
+bool Account::delete_account(Account accounts[], int account_id)
 {
-    for (int i = 0; i < count; i++)
+    for (int i = 0; i < MAX_ACCOUNTS; i++)
     {
         if (accounts[i].get_account_id() == account_id)
         {
-            for (int j = i; j < count - 1; j++)
+            for (int j = i; j < MAX_ACCOUNTS - 1; j++)
             {
                 accounts[j] = accounts[j + 1];
             }
-            count--;
             return true;
         }
     }

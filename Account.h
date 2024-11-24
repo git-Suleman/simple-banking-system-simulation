@@ -40,7 +40,7 @@ public:
     static void save_all_accounts(const Account accounts[], const string &filename);
     static void add_account(Account accounts[], int &count, const Account &new_account);
     static bool update_account(Account accounts[], int account_id, double new_balance);
-    static bool delete_account(Account accounts[], int &count, int account_id);
+    static bool delete_account(Account accounts[], int account_id);
     static bool file_exists(const string &filename);
     static int generate_account_id();
 

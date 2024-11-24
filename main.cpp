@@ -122,7 +122,7 @@ int main()
                 cout << "Enter account ID to delete: ";
                 cin >> acc_id;
 
-                if (Account::delete_account(accounts, account_count, acc_id))
+                if (Account::delete_account(accounts, acc_id))
                 {
                     Account::save_all_accounts(accounts, filename);
                 }
