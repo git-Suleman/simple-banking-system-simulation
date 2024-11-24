@@ -45,7 +45,7 @@ void ProcessTable::waitAndRemoveProcess(pid_t pid)
             int status;
             waitpid(pid, &status, 0);
             cout << "Child process (PID: " << pid << ") terminated.\n";
-            processes[i].pid = 0; // Mark as empty
+            processes[i].pid = 0;
             return;
         }
     }

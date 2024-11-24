@@ -17,18 +17,30 @@ Account::~Account()
     pthread_mutex_destroy(&mutex);
 }
 
+void Account::deposit_amount(int amount)
+{
+    balance += amount;
+}
+
+void Account::withdraw_amount(int amount)
+{
+    balance -= amount;
+}
+
 void Account::deposit(double amount)
 {
+
     pthread_mutex_lock(&mutex);
 
-    int transaction_id = generate_transaction_id();
-    balance += amount;
-
+    int transaction_id = Transaction::generate_transaction_id();
     Transaction transaction(transaction_id, account_id, "Deposit", amount);
     pid_t process_id = Transaction::create_process(transaction_id, account_id, "Deposit", amount);
     process_table.addProcess(process_id, transaction_id);
-    Transaction::log_transaction(transaction, "transactions.txt");
 
+    thread deposit(&Account::deposit_amount, this, amount);
+    deposit.join();
+
+    Transaction::log_transaction(transaction, "transactions.txt");
     process_table.printProcesses();
 
     pthread_mutex_unlock(&mutex);
@@ -46,11 +58,13 @@ void Account::withdraw(double amount)
         pthread_mutex_unlock(&mutex);
         throw runtime_error("Insufficient balance.");
     }
-    int transaction_id = generate_transaction_id();
-    balance -= amount;
-
+    int transaction_id = Transaction::generate_transaction_id();
     pid_t process_id = Transaction::create_process(transaction_id, account_id, "Withdrawal", amount);
     process_table.addProcess(process_id, transaction_id);
+
+    thread withdraw(&Account::withdraw_amount, this, amount);
+    withdraw.join();
+
     Transaction transaction(transaction_id, account_id, "Withdrawal", amount);
     Transaction::log_transaction(transaction, "transactions.txt");
 
@@ -152,7 +166,7 @@ void Account::save_all_accounts(const Account accounts[], const string &filename
 }
 
 // Add a new account to the array
-void Account::add_account(Account accounts[], int &count, const Account &new_account)
+void Account::create_account(Account accounts[], int &count, const Account &new_account)
 {
     if (count < MAX_ACCOUNTS)
     {
@@ -169,13 +183,12 @@ void Account::add_account(Account accounts[], int &count, const Account &new_acc
 // Update an existing account balance
 bool Account::update_account(Account accounts[], int account_id, double new_balance)
 {
-    for (int i = 0; i < MAX_ACCOUNTS; i++)
+    // need to change dataType
+
+    if (accounts[account_id % 1000].account_id == account_id)
     {
-        if (accounts[i].get_account_id() == account_id)
-        {
-            accounts[i].deposit(new_balance);
-            return true;
-        }
+        accounts[account_id % 1000].deposit(new_balance);
+        return true;
     }
     return false;
 }
@@ -273,37 +286,4 @@ void Account::search_by_customer_id(const Account accounts[], int count, const s
     {
         cout << "No accounts found for Customer ID: " << cust_id << "\n";
     }
-}
-
-int Account::generate_transaction_id()
-{
-    ifstream infile("transactionID.txt");
-    if (!infile)
-    {
-        ofstream outfile("transactionID.txt");
-        if (!outfile)
-        {
-            throw runtime_error("Error creating transactionID.txt");
-        }
-        outfile << 1001; // Start from 1000
-        outfile.close();
-        return 1001; // Return the initial ID
-    }
-
-    int id;
-    infile >> id; // Read the existing ID
-    infile.close();
-
-    // Increment the ID
-    id++;
-
-    // Write the new ID back to the file
-    ofstream outfile("transactionID.txt");
-    if (!outfile)
-    {
-        throw runtime_error("Error opening transactionID.txt for writing.");
-    }
-    outfile << id; // Save the incremented ID
-    outfile.close();
-    return id - 1; // Return the original ID
 }

@@ -37,6 +37,8 @@ public:
     double get_amount() const;
     string get_timestamp() const;
 
+    static int generate_transaction_id();
+
     static pid_t create_process(int transaction_id, int account_id, const string &operation_type, double amount);
 };
 

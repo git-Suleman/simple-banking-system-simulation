@@ -88,3 +88,36 @@ pid_t Transaction::create_process(int transaction_id, int account_id, const stri
         return pid;
     }
 }
+
+int Transaction::generate_transaction_id()
+{
+    ifstream infile("transactionID.txt");
+    if (!infile)
+    {
+        ofstream outfile("transactionID.txt");
+        if (!outfile)
+        {
+            throw runtime_error("Error creating transactionID.txt");
+        }
+        outfile << 1001; // Start from 1000
+        outfile.close();
+        return 1001; // Return the initial ID
+    }
+
+    int id;
+    infile >> id; // Read the existing ID
+    infile.close();
+
+    // Increment the ID
+    id++;
+
+    // Write the new ID back to the file
+    ofstream outfile("transactionID.txt");
+    if (!outfile)
+    {
+        throw runtime_error("Error opening transactionID.txt for writing.");
+    }
+    outfile << id; // Save the incremented ID
+    outfile.close();
+    return id - 1; // Return the original ID
+}

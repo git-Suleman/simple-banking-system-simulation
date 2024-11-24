@@ -1,4 +1,5 @@
 #include "Account.h"
+#include <thread>
 
 int main()
 {
@@ -38,7 +39,7 @@ int main()
                 cin >> balance;
 
                 Account new_account(acc_id, cust_id, balance);
-                Account::add_account(accounts, account_count, new_account);
+                Account::create_account(accounts, account_count, new_account);
 
                 Account::save_all_accounts(accounts, filename);
             }
@@ -53,8 +54,10 @@ int main()
 
                 if (amount > 0)
                 {
-                    if (Account::update_account(accounts, acc_id, amount))
+                    bool accountFound = Account::check_account(accounts, acc_id);
+                    if (accountFound)
                     {
+                        Account::update_account(accounts, acc_id, amount);
                         Account::save_all_accounts(accounts, filename);
                     }
                     else
@@ -80,7 +83,8 @@ int main()
                 {
                     try
                     {
-                        if (Account::check_account(accounts, acc_id))
+                        bool accountFound = Account::check_account(accounts, acc_id);
+                        if (accountFound)
                         {
                             Account &acc = accounts[acc_id % 1000];
                             acc.withdraw(amount);
@@ -107,7 +111,8 @@ int main()
                 cout << "Enter account ID: ";
                 cin >> acc_id;
 
-                if (Account::check_account(accounts, acc_id))
+                bool accountFound = Account::check_account(accounts, acc_id);
+                if (accountFound)
                 {
                     cout << "Current balance: " << accounts[acc_id - 1000].check_balance() << endl;
                 }
