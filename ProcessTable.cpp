@@ -1,8 +1,8 @@
 #include "ProcessTable.h"
 
-ProcessTable::ProcessTable(int size) : size(size)
+ProcessTable::ProcessTable(int size, int quantum) : size(size), quantum(quantum)
 {
-    processes = new Process[size];
+    processes = new Process[size]();
 }
 
 ProcessTable::~ProcessTable()
@@ -18,7 +18,7 @@ bool ProcessTable::addProcess(pid_t pid, int transaction_id)
         {
             processes[i].pid = pid;
             processes[i].transaction_id = transaction_id;
-            processes[i].status = "Running";
+            processes[i].status = "Waiting";
             return true;
         }
     }
@@ -31,7 +31,9 @@ void ProcessTable::printProcesses()
     {
         if (processes[i].pid != 0)
         {
-            cout << "Process (PID: " << processes[i].pid << ", Transaction ID: " << processes[i].transaction_id << ", Status: " << processes[i].status << ")\n";
+            cout << "Process (PID: " << processes[i].pid
+                 << ", Transaction ID: " << processes[i].transaction_id
+                 << ", Status: " << processes[i].status << ")\n";
         }
     }
 }
@@ -46,7 +48,63 @@ void ProcessTable::waitAndRemoveProcess(pid_t pid)
             waitpid(pid, &status, 0);
             cout << "Child process (PID: " << pid << ") terminated.\n";
             processes[i].pid = 0;
+            processes[i].status = "Finished";
             return;
         }
     }
+}
+
+void ProcessTable::runRoundRobin()
+{
+    printGanttChart();
+    bool hasActiveProcesses = true;
+
+    while (hasActiveProcesses)
+    {
+        hasActiveProcesses = false;
+
+        for (int i = 0; i < size; ++i)
+        {
+            if (processes[i].pid != 0 && processes[i].status != "Finished")
+            {
+                hasActiveProcesses = true;
+
+                // Simulate running the process for the quantum
+                processes[i].status = "Running";
+                cout << "Executing process (PID: " << processes[i].pid
+                     << ", Transaction ID: " << processes[i].transaction_id << ") for "
+                     << quantum << " seconds.\n";
+                printProcesses();
+                sleep(quantum); // Simulate the time slice
+
+                // Update the status to waiting (simulating that the process needs more time)
+                processes[i].status = "Waiting";
+
+                // Optionally, simulate the process completing randomly
+                if (rand() % 2 == 0) // Simulate 50% chance of finishing
+                {
+                    waitAndRemoveProcess(processes[i].pid);
+                }
+            }
+        }
+    }
+
+    cout << "All processes have completed.\n";
+}
+
+void ProcessTable::printGanttChart()
+{
+    cout << "\nGantt Chart:\n";
+    cout << "-----------------------------------------\n";
+
+    for (int i = 0; i < size; ++i)
+    {
+        if (processes[i].pid != 0)
+        {
+            cout << "| PID: " << processes[i].pid << " ";
+        }
+    }
+    cout << "|\n";
+
+    cout << "-----------------------------------------\n";
 }

@@ -21,14 +21,17 @@ private:
 
     Process *processes;
     int size;
+    int quantum; // Time slice for Round Robin
 
 public:
-    ProcessTable(int size);
+    ProcessTable(int size, int quantum);
     ~ProcessTable();
 
     bool addProcess(pid_t pid, int transaction_id);
     void printProcesses();
     void waitAndRemoveProcess(pid_t pid);
+    void runRoundRobin();
+    void printGanttChart();
 };
 
 #endif

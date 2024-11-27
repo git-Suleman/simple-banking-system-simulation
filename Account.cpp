@@ -1,7 +1,10 @@
 #include "Account.h"
 #include "ProcessTable.h"
 
-ProcessTable process_table(100);
+#define MAX_PROESSES 10
+#define TIME_QUANTUM 4
+
+ProcessTable process_table(MAX_PROESSES, TIME_QUANTUM);
 
 Account::Account(int acc_id, string cust_id, double init_balance)
     : account_id(acc_id), customer_id(cust_id), balance(init_balance)
@@ -36,6 +39,7 @@ void Account::deposit(double amount)
     Transaction transaction(transaction_id, account_id, "Deposit", amount);
     pid_t process_id = Transaction::create_process(transaction_id, account_id, "Deposit", amount);
     process_table.addProcess(process_id, transaction_id);
+    process_table.runRoundRobin();
 
     thread deposit(&Account::deposit_amount, this, amount);
     deposit.join();
