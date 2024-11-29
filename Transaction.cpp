@@ -1,5 +1,17 @@
 #include "Transaction.h"
 
+// TransactionPage structure to hold a transaction in memory
+struct TransactionPage
+{
+    Transaction transaction;
+    bool in_use; // Flag to track if this page is in use
+};
+
+// Array of pages (simulating memory)
+TransactionPage pages[MAX_PAGES];
+
+Transaction::Transaction() {}
+
 // Constructor to initialize a transaction
 Transaction::Transaction(int trans_id, int acc_id, const string &op_type, double amt)
     : transaction_id(trans_id), account_id(acc_id), operation_type(op_type), amount(amt)
@@ -74,7 +86,7 @@ pid_t Transaction::create_process(int transaction_id, int account_id, const stri
         // Child process
         cout << "Child process started (PID: " << getpid() << ", Transaction ID: " << transaction_id << ")\n";
 
-        // Simulate transaction processing (replace with your actual logic)
+        // Simulate transaction processing
         cout << "Simulating " << operation_type << " of " << amount << " for account " << account_id << "\n";
         sleep(2); // Simulate some work
 
@@ -120,4 +132,31 @@ int Transaction::generate_transaction_id()
     outfile << id; // Save the incremented ID
     outfile.close();
     return id - 1; // Return the original ID
+}
+
+// Add transaction to memory (FIFO page replacement)
+void Transaction::add_transaction_to_memory(const Transaction &transaction)
+{
+    static int next_page = 0; // Keeps track of the next available page (FIFO)
+
+    // If memory is full, replace the oldest transaction (FIFO)
+    if (next_page >= MAX_PAGES)
+    {
+        cout << "Memory is full, replacing the oldest transaction (Page " << next_page % MAX_PAGES << ").\n";
+    }
+
+    pages[next_page % MAX_PAGES] = {transaction, true};
+    next_page++;
+}
+
+// Log all transactions currently in memory to a file
+void Transaction::log_transactions_from_memory(const string &filename)
+{
+    for (int i = 0; i < MAX_PAGES; i++)
+    {
+        if (pages[i].in_use)
+        {
+            log_transaction(pages[i].transaction, filename);
+        }
+    }
 }

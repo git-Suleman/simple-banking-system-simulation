@@ -1,0 +1,2 @@
+g++ -std=c++11 -pthread Account.cpp Transaction.cpp ProcessTable.cpp  main.cpp -o run
+./run

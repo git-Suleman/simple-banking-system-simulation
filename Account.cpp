@@ -37,14 +37,19 @@ void Account::deposit(double amount)
 
     int transaction_id = Transaction::generate_transaction_id();
     Transaction transaction(transaction_id, account_id, "Deposit", amount);
+    Transaction::add_transaction_to_memory(transaction);
     pid_t process_id = Transaction::create_process(transaction_id, account_id, "Deposit", amount);
     process_table.addProcess(process_id, transaction_id);
+
     process_table.runRoundRobin();
 
     thread deposit(&Account::deposit_amount, this, amount);
     deposit.join();
 
     Transaction::log_transaction(transaction, "transactions.txt");
+
+    Transaction::log_transactions_from_memory("transactions.txt");
+
     process_table.printProcesses();
 
     pthread_mutex_unlock(&mutex);
@@ -63,15 +68,16 @@ void Account::withdraw(double amount)
         throw runtime_error("Insufficient balance.");
     }
     int transaction_id = Transaction::generate_transaction_id();
+    Transaction transaction(transaction_id, account_id, "Withdrawal", amount);
     pid_t process_id = Transaction::create_process(transaction_id, account_id, "Withdrawal", amount);
     process_table.addProcess(process_id, transaction_id);
+
+    process_table.runRoundRobin();
 
     thread withdraw(&Account::withdraw_amount, this, amount);
     withdraw.join();
 
-    Transaction transaction(transaction_id, account_id, "Withdrawal", amount);
     Transaction::log_transaction(transaction, "transactions.txt");
-
     process_table.printProcesses();
 
     pthread_mutex_unlock(&mutex);
