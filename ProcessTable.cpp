@@ -11,6 +11,7 @@ ProcessTable::~ProcessTable()
     delete[] processes;
 }
 
+// add process to processTable + IPC via Pipes
 bool ProcessTable::addProcess(pid_t pid, int transaction_id)
 {
     for (int i = 0; i < size; ++i)
@@ -24,9 +25,10 @@ bool ProcessTable::addProcess(pid_t pid, int transaction_id)
             return true;
         }
     }
-    return false; // Process table is full
+    return false;
 }
 
+// currently active processes in processTable
 void ProcessTable::printProcesses()
 {
     for (int i = 0; i < size; ++i)
@@ -40,6 +42,7 @@ void ProcessTable::printProcesses()
     }
 }
 
+// removes process after it's execution
 void ProcessTable::waitAndRemoveProcess(pid_t pid)
 {
     for (int i = 0; i < size; ++i)
@@ -57,6 +60,7 @@ void ProcessTable::waitAndRemoveProcess(pid_t pid)
     }
 }
 
+// scheduling algorithms for fair execution
 void ProcessTable::runRoundRobin()
 {
     printGanttChart();
@@ -102,6 +106,7 @@ void ProcessTable::runRoundRobin()
     cout << "All processes have completed.\n";
 }
 
+// visualization of processes execution
 void ProcessTable::printGanttChart()
 {
     cout << "\nGantt Chart:\n";
@@ -119,6 +124,7 @@ void ProcessTable::printGanttChart()
     cout << "-----------------------------------------\n";
 }
 
+// create Pipe for IPC
 void ProcessTable::setupPipe(Process &process)
 {
     if (pipe(process.pipe_fd) == -1)
@@ -128,6 +134,7 @@ void ProcessTable::setupPipe(Process &process)
     }
 }
 
+// destroy Pipe after process finishes
 void ProcessTable::cleanupPipe(Process &process)
 {
     close(process.pipe_fd[0]); // Close read end

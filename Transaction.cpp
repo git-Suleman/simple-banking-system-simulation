@@ -1,19 +1,15 @@
 #include "Transaction.h"
 
-// TransactionPage structure to hold a transaction in memory
-struct TransactionPage
+// paging for transactions
+struct Page
 {
     Transaction transaction;
-    bool in_use; // Flag to track if this page is in use
+    bool in_use;
 };
 
-// Array of pages (simulating memory)
-TransactionPage pages[MAX_PAGES];
+Page pages[MAX_PAGES];
 
-Transaction::Transaction() {}
-
-// Constructor to initialize a transaction
-Transaction::Transaction(int trans_id, int acc_id, const string &op_type, double amt)
+Transaction::Transaction(int trans_id, int acc_id, const string &op_type, int amt)
     : transaction_id(trans_id), account_id(acc_id), operation_type(op_type), amount(amt)
 {
     timestamp = get_current_time();
@@ -23,26 +19,6 @@ time_t Transaction::get_current_time()
 {
     time_t timestamp;
     return time(&timestamp);
-}
-
-// Method to log the transaction to the file
-void Transaction::log_transaction(const Transaction &transaction, const string &filename)
-{
-    ofstream file(filename, ios::app); // Open in append mode
-    if (!file)
-    {
-        throw runtime_error("Error opening transaction log file.");
-    }
-
-    // Log the transaction details
-    file << transaction.get_transaction_id() << ","
-         << transaction.get_account_id() << ","
-         << transaction.get_operation_type() << ","
-         << transaction.get_amount() << ","
-         << transaction.get_timestamp() << endl;
-
-    file.close();
-    cout << "Transaction logged successfully." << endl;
 }
 
 // Getter methods for transaction details
@@ -61,7 +37,7 @@ string Transaction::get_operation_type() const
     return operation_type;
 }
 
-double Transaction::get_amount() const
+int Transaction::get_amount() const
 {
     return amount;
 }
@@ -71,7 +47,41 @@ string Transaction::get_timestamp() const
     return ctime(&timestamp);
 }
 
-pid_t Transaction::create_process(int transaction_id, int account_id, const string &operation_type, double amount)
+int Transaction::generate_transaction_id()
+{
+    ifstream infile("transactionID.txt");
+    if (!infile)
+    {
+        ofstream outfile("transactionID.txt");
+        if (!outfile)
+        {
+            throw runtime_error("Error creating transactionID.txt");
+        }
+        outfile << 10001; // Start from 10001
+        outfile.close();
+        return 10001; // Return the initial ID
+    }
+
+    int id;
+    infile >> id; // Read the existing ID
+    infile.close();
+
+    // Increment the ID
+    id++;
+
+    // Write the new ID back to the file
+    ofstream outfile("transactionID.txt");
+    if (!outfile)
+    {
+        throw runtime_error("Error opening transactionID.txt for writing.");
+    }
+    outfile << id; // Save the incremented ID
+    outfile.close();
+    return id - 1; // Return the original ID
+}
+
+// create process while doing transaction
+pid_t Transaction::create_process(int transaction_id, int account_id, const string &operation_type, int amount)
 {
     pid_t pid = fork();
 
@@ -101,39 +111,7 @@ pid_t Transaction::create_process(int transaction_id, int account_id, const stri
     }
 }
 
-int Transaction::generate_transaction_id()
-{
-    ifstream infile("transactionID.txt");
-    if (!infile)
-    {
-        ofstream outfile("transactionID.txt");
-        if (!outfile)
-        {
-            throw runtime_error("Error creating transactionID.txt");
-        }
-        outfile << 1001; // Start from 1000
-        outfile.close();
-        return 1001; // Return the initial ID
-    }
-
-    int id;
-    infile >> id; // Read the existing ID
-    infile.close();
-
-    // Increment the ID
-    id++;
-
-    // Write the new ID back to the file
-    ofstream outfile("transactionID.txt");
-    if (!outfile)
-    {
-        throw runtime_error("Error opening transactionID.txt for writing.");
-    }
-    outfile << id; // Save the incremented ID
-    outfile.close();
-    return id - 1; // Return the original ID
-}
-
+/*-----------PAGING------------*/
 // Add transaction to memory (FIFO page replacement)
 void Transaction::add_transaction_to_memory(const Transaction &transaction)
 {
@@ -159,4 +137,24 @@ void Transaction::log_transactions_from_memory(const string &filename)
             log_transaction(pages[i].transaction, filename);
         }
     }
+}
+
+// save all data into database(transactions.txt)
+void Transaction::log_transaction(const Transaction &transaction, const string &filename)
+{
+    ofstream file(filename, ios::app); // Open in append mode
+    if (!file)
+    {
+        throw runtime_error("Error opening transaction log file.");
+    }
+
+    // Log the transaction details
+    file << transaction.get_transaction_id() << ","
+         << transaction.get_account_id() << ","
+         << transaction.get_operation_type() << ","
+         << transaction.get_amount() << ","
+         << transaction.get_timestamp() << endl;
+
+    file.close();
+    cout << "Transaction logged successfully." << endl;
 }

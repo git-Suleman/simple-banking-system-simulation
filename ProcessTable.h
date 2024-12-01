@@ -7,16 +7,15 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <fcntl.h>    // For O_* constants
-#include <sys/stat.h> // For mkfifo()
 
 using namespace std;
+
 struct Process
 {
     pid_t pid;
     int transaction_id;
     string status;
-    int pipe_fd[2]; // Pipe file descriptors (read/write)
+    int pipe_fd[2];
 };
 
 class ProcessTable
@@ -24,17 +23,22 @@ class ProcessTable
 private:
     Process *processes;
     int size;
-    int quantum; // Time slice for Round Robin
+    int quantum;
 
 public:
     ProcessTable(int size, int quantum);
     ~ProcessTable();
 
+    // process related methods
     bool addProcess(pid_t pid, int transaction_id);
     void printProcesses();
     void waitAndRemoveProcess(pid_t pid);
+
+    // scheduling algorithm
     void runRoundRobin();
     void printGanttChart();
+
+    // inter-process communication (IPC)
     void setupPipe(Process &process);
     void cleanupPipe(Process &process);
 };

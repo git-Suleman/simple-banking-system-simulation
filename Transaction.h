@@ -11,7 +11,7 @@
 
 using namespace std;
 
-const int MAX_PAGES = 5; // Maximum number of transactions that can be stored in memory (simulated pages)
+const int MAX_PAGES = 5;
 
 class Transaction
 {
@@ -19,33 +19,32 @@ private:
     int transaction_id;
     int account_id;
     string operation_type;
-    double amount;
+    int amount;
     time_t timestamp;
 
 public:
-    // Constructor
-    Transaction();
-    Transaction(int trans_id, int acc_id, const string &op_type, double amt);
+    Transaction() {}
+    Transaction(int trans_id, int acc_id, const string &op_type, int amt);
 
-    // Method to save the transaction to a file
-    static void log_transaction(const Transaction &transaction, const string &filename);
-
-    // Helper method to generate timestamp for the transaction
+    // record transaction time
     static time_t get_current_time();
 
-    // Getter for transaction details
+    // getters
     int get_transaction_id() const;
     int get_account_id() const;
     string get_operation_type() const;
-    double get_amount() const;
+    int get_amount() const;
     string get_timestamp() const;
 
     static int generate_transaction_id();
-    static pid_t create_process(int transaction_id, int account_id, const string &operation_type, double amount);
+    static pid_t create_process(int transaction_id, int account_id, const string &operation_type, int amount);
 
-    // Memory management
+    // memory management + paging
     static void add_transaction_to_memory(const Transaction &transaction);
     static void log_transactions_from_memory(const string &filename);
+
+    // save transaction data to database(transactions.txt)
+    static void log_transaction(const Transaction &transaction, const string &filename);
 };
 
-#endif // TRANSACTION_H
+#endif

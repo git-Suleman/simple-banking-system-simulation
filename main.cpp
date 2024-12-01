@@ -1,9 +1,48 @@
 #include "Account.h"
-#include <thread>
+
+bool validate_integer(string input)
+{
+    for (int i = 0; i < input.length(); i++)
+    {
+        if (!isdigit(input[i]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool get_valid_input(const string prompt, string &input)
+{
+    for (int i = 0; i < 3; i++)
+    {
+        cout << prompt;
+        getline(cin, input);
+        if (validate_integer(input))
+        {
+            return true;
+        }
+        cout << "Invalid input!, try Again!" << endl;
+    }
+    cout << "Better Luck next time!" << endl;
+    return false;
+}
+
+bool get_account_id(string acc_id, int &account_id)
+{
+    string prompt = "Enter account ID: ";
+    if (!get_valid_input(prompt, acc_id))
+    {
+        return false;
+    }
+    account_id = stoi(acc_id);
+    return true;
+}
 
 int main()
 {
     Account accounts[MAX_ACCOUNTS];
+    int valid_count = 0;
     int account_count = 0;
     string filename = "accounts.txt";
 
@@ -16,118 +55,144 @@ int main()
 
         while (true)
         {
-            cout << "\n-- Simple Banking System --\n";
-            cout << "1. Create Account\n";
-            cout << "2. Deposit\n";
-            cout << "3. Withdraw\n";
-            cout << "4. Check Balance\n";
-            cout << "5. Delete Account\n";
-            cout << "6. Exit\n";
+            cout << "\n----- Simple Banking System -----" << endl;
+            cout << "1. Create Account" << endl;
+            cout << "2. Deposit" << endl;
+            cout << "3. Withdraw" << endl;
+            cout << "4. Check Balance" << endl;
+            cout << "5. Delete Account" << endl;
+            cout << "6. Search an Account" << endl;
+            cout << "7. View All Accounts" << endl;
+            cout << "8. Exit" << endl;
             cout << "Enter your choice: ";
-            int choice;
-            cin >> choice;
+            string choice;
+            getline(cin, choice);
 
-            if (choice == 1)
+            if (choice == "1")
             {
                 int acc_id;
                 string cust_id;
-                double balance;
-                acc_id = Account::generate_account_id();
-                cout << "Enter customer ID: ";
-                cin >> cust_id;
-                cout << "Enter initial balance: ";
-                cin >> balance;
+                string balance;
 
-                Account new_account(acc_id, cust_id, balance);
+                string prompt = "Enter customer ID: ";
+                getline(cin, cust_id);
+
+                prompt = "Enter initial balance: ";
+                getline(cin, balance);
+                if (!get_valid_input(prompt, balance))
+                {
+                    return 0;
+                }
+                int bal = stoi(balance);
+
+                acc_id = Account::generate_account_id();
+
+                Account new_account(acc_id, cust_id, bal);
                 Account::create_account(accounts, account_count, new_account);
 
                 Account::save_all_accounts(accounts, filename);
             }
-            else if (choice == 2)
+            else if (choice == "2")
             {
-                int acc_id;
-                double amount;
-                cout << "Enter account ID: ";
-                cin >> acc_id;
-                cout << "Enter amount to deposit: ";
-                cin >> amount;
+                string acc_id;
+                string amt;
+                int account_id;
+
+                if (!get_account_id(acc_id, account_id))
+                {
+                    return 0;
+                }
+
+                if (!Account::validate_account(accounts, account_id))
+                {
+                    cout << "Account doesn't exist!" << endl;
+                    return 0;
+                }
+
+                string prompt = "Enter amount to deposit: ";
+                if (!get_valid_input(prompt, amt))
+                {
+                    return 0;
+                }
+                int amount = stoi(amt);
 
                 if (amount > 0)
                 {
-                    bool accountFound = Account::check_account(accounts, acc_id);
-                    if (accountFound)
-                    {
-                        Account::update_account(accounts, acc_id, amount);
-                        Account::save_all_accounts(accounts, filename);
-                    }
-                    else
-                    {
-                        cout << "Account not found.\n";
-                    }
+                    Account &acc = accounts[account_id % 1000];
+                    acc.withdraw(amount);
+                    Account::save_all_accounts(accounts, filename);
                 }
                 else
                 {
-                    cout << "Negative amount cannot be deposited." << endl;
+                    cout << "Negative amount cannot be deposited" << endl;
                 }
             }
-            else if (choice == 3)
+            else if (choice == "3")
             {
-                int acc_id;
-                double amount;
-                cout << "Enter account ID: ";
-                cin >> acc_id;
-                cout << "Enter amount to withdraw: ";
-                cin >> amount;
+                string acc_id;
+                string amt;
+                int account_id;
+
+                if (!get_account_id(acc_id, account_id))
+                {
+                    return 0;
+                }
+
+                if (!Account::validate_account(accounts, account_id))
+                {
+                    cout << "Account doesn't exist!" << endl;
+                    return 0;
+                }
+
+                string prompt = "Enter amount to withdraw: ";
+                if (!get_valid_input(prompt, amt))
+                {
+                    return 0;
+                }
+                int amount = stoi(amt);
 
                 if (amount > 0)
                 {
-                    try
-                    {
-                        bool accountFound = Account::check_account(accounts, acc_id);
-                        if (accountFound)
-                        {
-                            Account &acc = accounts[acc_id % 1000];
-                            acc.withdraw(amount);
-                            Account::save_all_accounts(accounts, filename);
-                        }
-                        else
-                        {
-                            cout << "Account not found.\n";
-                        }
-                    }
-                    catch (const runtime_error &e)
-                    {
-                        cout << e.what() << endl;
-                    }
+                    Account &acc = accounts[account_id % 1000];
+                    acc.withdraw(amount);
+                    Account::save_all_accounts(accounts, filename);
                 }
                 else
                 {
-                    cout << "Negative amount cannot be withdrawn." << endl;
+                    cout << "Negative amount cannot be withdrawn" << endl;
                 }
             }
-            else if (choice == 4)
+            else if (choice == "4")
             {
-                int acc_id;
-                cout << "Enter account ID: ";
-                cin >> acc_id;
+                string acc_id;
+                int account_id;
 
-                bool accountFound = Account::check_account(accounts, acc_id);
-                if (accountFound)
+                if (!get_account_id(acc_id, account_id))
                 {
-                    cout << "Current balance: " << accounts[acc_id - 1000].check_balance() << endl;
+                    return 0;
+                }
+
+                if (!Account::validate_account(accounts, account_id))
+                {
+                    cout << "Account doesn't exist!" << endl;
+                    return 0;
                 }
                 else
                 {
-                    cout << "Account not found.\n";
+                    cout << "Current balance: " << accounts[account_id - 1000].check_balance() << endl;
                 }
             }
-            else if (choice == 5)
+            else if (choice == "5")
             {
-                int acc_id;
-                cout << "Enter account ID to delete: ";
-                cin >> acc_id;
+                string acc_id;
+                int account_id;
 
-                if (Account::delete_account(accounts, acc_id))
+                if (!get_account_id(acc_id, account_id))
+                {
+                    return 0;
+                }
+
+                if (Account::delete_account(accounts, account_id))
                 {
                     Account::save_all_accounts(accounts, filename);
                 }
@@ -136,13 +201,49 @@ int main()
                     cout << "Account not found.\n";
                 }
             }
-            else if (choice == 6)
+            else if (choice == "6")
+            {
+                string acc_id;
+                int account_id;
+
+                if (!get_account_id(acc_id, account_id))
+                {
+                    return 0;
+                }
+
+                if (!Account::validate_account(accounts, account_id))
+                {
+                    cout << "Account doesn't exist!" << endl;
+                    return 0;
+                }
+                else
+                {
+                    cout << "Account found" << endl;
+                    cout << "----------------------------------------------" << endl;
+                    cout << "Customer's ID: " << accounts[account_id - 1000].get_customer_id() << endl;
+                    cout << "Account's ID: " << accounts[account_id - 1000].get_account_id() << endl;
+                    cout << "Current balance: " << accounts[account_id - 1000].check_balance() << endl;
+                    cout << "----------------------------------------------" << endl;
+                }
+            }
+            else if (choice == "7")
+            {
+                Account::view_all_accounts(accounts);
+            }
+            else if (choice == "8")
             {
                 cout << "Exiting program...\n";
                 break;
             }
             else
             {
+                if (valid_count == 3)
+                {
+                    cout << "Too much invalid attempts!!!" << endl;
+                    cout << "Better Luck next time!" << endl;
+                    break;
+                }
+                valid_count++;
                 cout << "Invalid choice. Please try again.\n";
             }
         }

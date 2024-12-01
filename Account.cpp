@@ -1,12 +1,11 @@
 #include "Account.h"
-#include "ProcessTable.h"
 
 #define MAX_PROESSES 10
-#define TIME_QUANTUM 4
+#define TIME_QUANTUM 1
 
 ProcessTable process_table(MAX_PROESSES, TIME_QUANTUM);
 
-Account::Account(int acc_id, string cust_id, double init_balance)
+Account::Account(int acc_id, string cust_id, int init_balance)
     : account_id(acc_id), customer_id(cust_id), balance(init_balance)
 {
     pthread_mutex_init(&mutex, nullptr);
@@ -30,64 +29,101 @@ void Account::withdraw_amount(int amount)
     balance -= amount;
 }
 
-void Account::deposit(double amount)
+// API # 01 (create_account())
+void Account::create_account(Account accounts[], int &count, const Account &new_account)
 {
+    if (count < MAX_ACCOUNTS)
+    {
+        int acc_id = new_account.account_id;
+        accounts[acc_id % 1000] = new_account;
+        cout << "Account added successfully.\n";
+    }
+    else
+    {
+        throw runtime_error("Account limit reached.");
+    }
+}
 
+// API # 02 (deposit())
+void Account::deposit(int amount)
+{
+    // synchronization
     pthread_mutex_lock(&mutex);
 
     int transaction_id = Transaction::generate_transaction_id();
     Transaction transaction(transaction_id, account_id, "Deposit", amount);
+
+    // memory management
     Transaction::add_transaction_to_memory(transaction);
+
+    // process creation
     pid_t process_id = Transaction::create_process(transaction_id, account_id, "Deposit", amount);
     process_table.addProcess(process_id, transaction_id);
 
+    // process scheduling
     process_table.runRoundRobin();
 
+    // multi-threading
     thread deposit(&Account::deposit_amount, this, amount);
     deposit.join();
 
+    // memory management
     Transaction::log_transaction(transaction, "transactions.txt");
-
     Transaction::log_transactions_from_memory("transactions.txt");
 
     process_table.printProcesses();
 
     pthread_mutex_unlock(&mutex);
 
+    // remove process at completing transaction
     process_table.waitAndRemoveProcess(process_id);
 
     cout << "Deposit successful. New Balance: " << balance << endl;
 }
 
-void Account::withdraw(double amount)
+// API # 03 (withdraw())
+void Account::withdraw(int amount)
 {
+    // synchronization
     pthread_mutex_lock(&mutex);
+
+    // validitation
     if (balance < amount)
     {
         pthread_mutex_unlock(&mutex);
         throw runtime_error("Insufficient balance.");
     }
+
     int transaction_id = Transaction::generate_transaction_id();
     Transaction transaction(transaction_id, account_id, "Withdrawal", amount);
+
+    // process creation
     pid_t process_id = Transaction::create_process(transaction_id, account_id, "Withdrawal", amount);
     process_table.addProcess(process_id, transaction_id);
 
+    // process scheduling
     process_table.runRoundRobin();
 
+    // multi-threading
     thread withdraw(&Account::withdraw_amount, this, amount);
     withdraw.join();
 
+    // memory management
     Transaction::log_transaction(transaction, "transactions.txt");
+    Transaction::log_transactions_from_memory("transactions.txt");
+
     process_table.printProcesses();
 
     pthread_mutex_unlock(&mutex);
 
+    // remove process at completing transaction
     process_table.waitAndRemoveProcess(process_id);
 
     cout << "Withdrawal successful. New Balance: " << balance << endl;
 }
 
-double Account::check_balance() const
+// API # 04 (check_balance())
+int Account::check_balance() const
 {
     return balance;
 }
@@ -102,14 +138,7 @@ string Account::get_customer_id() const
     return customer_id;
 }
 
-// Check if the file exists
-bool Account::file_exists(const string &filename)
-{
-    ifstream file(filename);
-    return file.good();
-}
-
-// Load all accounts from the file
+// load all data into Account array
 void Account::load_all_accounts(Account accounts[], int &count, const string &filename)
 {
     if (!file_exists(filename))
@@ -126,7 +155,7 @@ void Account::load_all_accounts(Account accounts[], int &count, const string &fi
 
     int acc_id;
     string cust_id;
-    double bal;
+    int bal;
     string line;
     count = 0;
 
@@ -142,7 +171,7 @@ void Account::load_all_accounts(Account accounts[], int &count, const string &fi
         cust_id = item;
 
         getline(ss, item, ',');
-        bal = stod(item);
+        bal = stoi(item);
 
         count = acc_id % 1000;
 
@@ -152,7 +181,7 @@ void Account::load_all_accounts(Account accounts[], int &count, const string &fi
     file.close();
 }
 
-// Save all accounts to the file
+// save all data into database(account.txt)
 void Account::save_all_accounts(const Account accounts[], const string &filename)
 {
     ofstream file(filename, ios::trunc); // Overwrite the file
@@ -173,51 +202,6 @@ void Account::save_all_accounts(const Account accounts[], const string &filename
 
     file.close();
     cout << "Database updated successfully." << endl;
-}
-
-// Add a new account to the array
-void Account::create_account(Account accounts[], int &count, const Account &new_account)
-{
-    if (count < MAX_ACCOUNTS)
-    {
-        int acc_id = new_account.account_id;
-        accounts[acc_id % 1000] = new_account;
-        cout << "Account added successfully.\n";
-    }
-    else
-    {
-        throw runtime_error("Account limit reached.");
-    }
-}
-
-// Update an existing account balance
-bool Account::update_account(Account accounts[], int account_id, double new_balance)
-{
-    // need to change dataType
-
-    if (accounts[account_id % 1000].account_id == account_id)
-    {
-        accounts[account_id % 1000].deposit(new_balance);
-        return true;
-    }
-    return false;
-}
-
-// Delete an account from the array
-bool Account::delete_account(Account accounts[], int account_id)
-{
-    for (int i = 0; i < MAX_ACCOUNTS; i++)
-    {
-        if (accounts[i].get_account_id() == account_id)
-        {
-            for (int j = i; j < MAX_ACCOUNTS - 1; j++)
-            {
-                accounts[j] = accounts[j + 1];
-            }
-            return true;
-        }
-    }
-    return false;
 }
 
 int Account::generate_account_id()
@@ -253,18 +237,38 @@ int Account::generate_account_id()
     return id - 1; // Return the original ID
 }
 
-bool Account::check_account(const Account accounts[], int account_id)
+// account deletion ... // needed to be checked
+bool Account::delete_account(Account accounts[], int account_id)
 {
     for (int i = 0; i < MAX_ACCOUNTS; i++)
     {
         if (accounts[i].get_account_id() == account_id)
         {
-            return true; // Account found
+            for (int j = i; j < MAX_ACCOUNTS - 1; j++)
+            {
+                accounts[j] = accounts[j + 1];
+            }
+            return true;
         }
     }
-    return false; // Account not found
+    return false;
 }
 
+bool Account::search_by_customer_id(const Account accounts[], const string &cust_id)
+{
+    for (int i = 0; i < MAX_ACCOUNTS; i++)
+    {
+        if (accounts[i].get_customer_id() == cust_id)
+        {
+            cout << "Account ID: " << accounts[i].get_account_id()
+                 << ", Balance: " << accounts[i].check_balance() << "\n";
+            return true;
+        }
+    }
+    return false;
+}
+
+// prints all account's data
 void Account::view_all_accounts(const Account accounts[])
 {
     cout << "Account ID\tCustomer ID\tBalance\n";
@@ -278,22 +282,24 @@ void Account::view_all_accounts(const Account accounts[])
                  << accounts[i].check_balance() << "\n";
         }
     }
+    cout << "----------------------------------------\n";
 }
 
-void Account::search_by_customer_id(const Account accounts[], int count, const string &cust_id)
+bool Account::validate_account(const Account accounts[], int account_id)
 {
-    bool found = false;
-    for (int i = 0; i < count; i++)
+    for (int i = 0; i < MAX_ACCOUNTS; i++)
     {
-        if (accounts[i].get_customer_id() == cust_id)
+        if (accounts[i].get_account_id() == account_id)
         {
-            cout << "Account ID: " << accounts[i].get_account_id()
-                 << ", Balance: " << accounts[i].check_balance() << "\n";
-            found = true;
+            return true;
         }
     }
-    if (!found)
-    {
-        cout << "No accounts found for Customer ID: " << cust_id << "\n";
-    }
+    return false;
+}
+
+// checking database status
+bool Account::file_exists(const string &filename)
+{
+    ifstream file(filename);
+    return file.good();
 }
