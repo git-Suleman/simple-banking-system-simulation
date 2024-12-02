@@ -50,6 +50,7 @@ public:
     // validations
     static bool file_exists(const string &filename);
     static bool validate_account(const Account accounts[], int account_id);
+    static bool validate_account_by_customerID(const Account accounts[], string customer_id);
 };
 
 #endif

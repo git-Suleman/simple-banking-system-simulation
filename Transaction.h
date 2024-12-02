@@ -8,9 +8,11 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 using namespace std;
 
+// frames
 const int MAX_PAGES = 5;
 
 class Transaction
@@ -36,6 +38,7 @@ public:
     int get_amount() const;
     string get_timestamp() const;
 
+    // transaction_id generation + process creation
     static int generate_transaction_id();
     static pid_t create_process(int transaction_id, int account_id, const string &operation_type, int amount);
 

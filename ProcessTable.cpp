@@ -3,7 +3,7 @@
 ProcessTable::ProcessTable(int size, int quantum)
     : size(size), quantum(quantum)
 {
-    processes = new Process[size]();
+    processes = new Process[size];
 }
 
 ProcessTable::~ProcessTable()
@@ -35,9 +35,9 @@ void ProcessTable::printProcesses()
     {
         if (processes[i].pid != 0)
         {
-            cout << "Process (PID: " << processes[i].pid
-                 << ", Transaction ID: " << processes[i].transaction_id
-                 << ", Status: " << processes[i].status << ")\n";
+            cout << "Process (PID: " << processes[i].pid << endl;
+            cout << "Transaction ID: " << processes[i].transaction_id << endl;
+            cout << "Status: " << processes[i].status << endl;
         }
     }
 }
@@ -51,7 +51,7 @@ void ProcessTable::waitAndRemoveProcess(pid_t pid)
         {
             int status;
             waitpid(pid, &status, 0);
-            cout << "Child process (PID: " << pid << ") terminated.\n";
+            cout << "Child process (PID: " << pid << ") terminated." << endl;
             cleanupPipe(processes[i]);
             processes[i].pid = 0;
             processes[i].status = "Finished";
@@ -76,41 +76,31 @@ void ProcessTable::runRoundRobin()
             {
                 hasActiveProcesses = true;
 
-                // Simulate running the process for the quantum
                 processes[i].status = "Running";
-                cout << "Executing process (PID: " << processes[i].pid
-                     << ", Transaction ID: " << processes[i].transaction_id << ") for "
-                     << quantum << " seconds.\n";
+                cout << "Executing process PID: " << processes[i].pid << endl;
+                cout << "Transaction ID: " << processes[i].transaction_id << " for " << quantum << " seconds" << endl;
                 printProcesses();
-                sleep(quantum); // Simulate the time slice
+                sleep(quantum);
 
-                // Update the status to waiting (simulating that the process needs more time)
+                // update status to waiting after time quantum
                 processes[i].status = "Waiting";
 
-                // Optionally, simulate the process completing randomly
-                if (rand() % 2 == 0) // Simulate 50% chance of finishing
-                {
-                    waitAndRemoveProcess(processes[i].pid);
-                }
-                else
-                {
-                    // Simulate IPC by writing status to the pipe
-                    const char *message = "Process still running";
-                    write(processes[i].pipe_fd[1], message, strlen(message) + 1);
-                    cout << "Status update sent to pipe for PID " << processes[i].pid << ".\n";
-                }
+                waitAndRemoveProcess(processes[i].pid);
+
+                string message = "Process in waiting queue";
+                write(processes[i].pipe_fd[1], message.c_str(), message.length() + 1);
+                cout << "Status update sent to pipe for PID " << processes[i].pid << endl;
             }
         }
     }
-
     cout << "All processes have completed.\n";
 }
 
 // visualization of processes execution
 void ProcessTable::printGanttChart()
 {
-    cout << "\nGantt Chart:\n";
-    cout << "-----------------------------------------\n";
+    cout << "\nGantt Chart:" << endl;
+    cout << "-----------------------------------------" << endl;
 
     for (int i = 0; i < size; ++i)
     {
@@ -119,9 +109,8 @@ void ProcessTable::printGanttChart()
             cout << "| PID: " << processes[i].pid << " ";
         }
     }
-    cout << "|\n";
-
-    cout << "-----------------------------------------\n";
+    cout << "|" << endl;
+    cout << "-----------------------------------------" << endl;
 }
 
 // create Pipe for IPC
@@ -129,14 +118,14 @@ void ProcessTable::setupPipe(Process &process)
 {
     if (pipe(process.pipe_fd) == -1)
     {
-        perror("Pipe creation failed");
-        exit(EXIT_FAILURE);
+        cout << "Pipe creation failed" << endl;
+        return;
     }
 }
 
 // destroy Pipe after process finishes
 void ProcessTable::cleanupPipe(Process &process)
 {
-    close(process.pipe_fd[0]); // Close read end
-    close(process.pipe_fd[1]); // Close write end
+    close(process.pipe_fd[0]); // close reading
+    close(process.pipe_fd[1]); // close writing
 }

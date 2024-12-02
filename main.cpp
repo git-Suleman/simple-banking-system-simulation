@@ -1,5 +1,6 @@
 #include "Account.h"
 
+// validate if the entered string is interger
 bool validate_integer(string input)
 {
     for (int i = 0; i < input.length(); i++)
@@ -12,6 +13,7 @@ bool validate_integer(string input)
     return true;
 }
 
+// get valid input if user give wrong input(max 3 times)
 bool get_valid_input(const string prompt, string &input)
 {
     for (int i = 0; i < 3; i++)
@@ -24,10 +26,12 @@ bool get_valid_input(const string prompt, string &input)
         }
         cout << "Invalid input!, try Again!" << endl;
     }
+    cout << "Too much invalid attempts!!!" << endl;
     cout << "Better Luck next time!" << endl;
     return false;
 }
 
+// globle function for account_number validation
 bool get_account_id(string acc_id, int &account_id)
 {
     string prompt = "Enter account ID: ";
@@ -48,7 +52,7 @@ int main()
 
     try
     {
-        // Load accounts from file
+        // load data from accounts.txt
         Account::load_all_accounts(accounts, account_count, filename);
 
         Account::view_all_accounts(accounts);
@@ -61,9 +65,10 @@ int main()
             cout << "3. Withdraw" << endl;
             cout << "4. Check Balance" << endl;
             cout << "5. Delete Account" << endl;
-            cout << "6. Search an Account" << endl;
-            cout << "7. View All Accounts" << endl;
-            cout << "8. Exit" << endl;
+            cout << "6. Search account by AccountID" << endl;
+            cout << "7. Search account by CustomerID" << endl;
+            cout << "8. View All Accounts" << endl;
+            cout << "9. Exit" << endl;
             cout << "Enter your choice: ";
             string choice;
             getline(cin, choice);
@@ -74,11 +79,10 @@ int main()
                 string cust_id;
                 string balance;
 
-                string prompt = "Enter customer ID: ";
+                cout << "Enter customer ID: ";
                 getline(cin, cust_id);
 
-                prompt = "Enter initial balance: ";
-                getline(cin, balance);
+                string prompt = "Enter initial balance: ";
                 if (!get_valid_input(prompt, balance))
                 {
                     return 0;
@@ -228,11 +232,23 @@ int main()
             }
             else if (choice == "7")
             {
-                Account::view_all_accounts(accounts);
+                string customer_id;
+                cout << "Enter CustomerID: ";
+                getline(cin, customer_id);
+                if (!Account::validate_account_by_customerID(accounts, customer_id))
+                {
+                    cout << "Invalid CustomerID!" << endl;
+                    return 0;
+                }
+                Account::search_by_customer_id(accounts, customer_id);
             }
             else if (choice == "8")
             {
-                cout << "Exiting program...\n";
+                Account::view_all_accounts(accounts);
+            }
+            else if (choice == "9")
+            {
+                cout << "Terminating program\n";
                 break;
             }
             else

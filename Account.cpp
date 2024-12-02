@@ -35,12 +35,33 @@ void Account::create_account(Account accounts[], int &count, const Account &new_
     if (count < MAX_ACCOUNTS)
     {
         int acc_id = new_account.account_id;
-        accounts[acc_id % 1000] = new_account;
-        cout << "Account added successfully.\n";
+
+        pid_t pid = fork();
+
+        if (pid == 0)
+        {
+            // Child process
+            cout << "Creating an account for Account ID: " << acc_id << endl;
+            _exit(0);
+        }
+        else if (pid > 0)
+        {
+            // Parent process
+            accounts[acc_id % 1000] = new_account;
+            count++;
+            cout << "Account created!!!" << endl;
+        }
+        else
+        {
+            // fork() failed
+            cout << "Failed to create a child process." << endl;
+            return;
+        }
     }
     else
     {
-        throw runtime_error("Account limit reached.");
+        cout << "Account limit reached" << endl;
+        return;
     }
 }
 
@@ -143,8 +164,7 @@ void Account::load_all_accounts(Account accounts[], int &count, const string &fi
 {
     if (!file_exists(filename))
     {
-        cout << "No account database found. Creating a new file..." << endl;
-        return; // No file to load
+        return;
     }
 
     ifstream file(filename);
@@ -184,7 +204,8 @@ void Account::load_all_accounts(Account accounts[], int &count, const string &fi
 // save all data into database(account.txt)
 void Account::save_all_accounts(const Account accounts[], const string &filename)
 {
-    ofstream file(filename, ios::trunc); // Overwrite the file
+    // overwriting the database(accounts.txt)
+    ofstream file(filename, ios::trunc);
     if (!file)
     {
         throw runtime_error("Error opening file.");
@@ -194,9 +215,9 @@ void Account::save_all_accounts(const Account accounts[], const string &filename
     {
         if (accounts[i].account_id != 0)
         {
-            file << accounts[i].get_account_id() << ","
-                 << accounts[i].get_customer_id() << ","
-                 << accounts[i].check_balance() << endl;
+            file << accounts[i].get_account_id() << ",";
+            file << accounts[i].get_customer_id() << ",";
+            file << accounts[i].check_balance() << endl;
         }
     }
 
@@ -214,27 +235,27 @@ int Account::generate_account_id()
         {
             throw runtime_error("Error creating accountID.txt");
         }
-        outfile << 1001; // Start from 1000
+        outfile << 1001; // start account_id from 1001
         outfile.close();
-        return 1001; // Return the initial ID
+        return 1001;
     }
 
     int id;
-    infile >> id; // Read the existing ID
+    infile >> id;
     infile.close();
 
-    // Increment the ID
+    // auto increment account_id
     id++;
 
-    // Write the new ID back to the file
+    // write account_id after incrementing it
     ofstream outfile("accountID.txt");
     if (!outfile)
     {
         throw runtime_error("Error opening accountID.txt for writing.");
     }
-    outfile << id; // Save the incremented ID
+    outfile << id;
     outfile.close();
-    return id - 1; // Return the original ID
+    return id - 1; // return account_id
 }
 
 // account deletion ... // needed to be checked
@@ -260,8 +281,8 @@ bool Account::search_by_customer_id(const Account accounts[], const string &cust
     {
         if (accounts[i].get_customer_id() == cust_id)
         {
-            cout << "Account ID: " << accounts[i].get_account_id()
-                 << ", Balance: " << accounts[i].check_balance() << "\n";
+            cout << "Account ID: " << accounts[i].get_account_id();
+            cout << ", Balance: " << accounts[i].check_balance() << endl;
             return true;
         }
     }
@@ -271,18 +292,31 @@ bool Account::search_by_customer_id(const Account accounts[], const string &cust
 // prints all account's data
 void Account::view_all_accounts(const Account accounts[])
 {
+    int accounts_count = 0;
     cout << "Account ID\tCustomer ID\tBalance\n";
     cout << "----------------------------------------\n";
     for (int i = 0; i < MAX_ACCOUNTS; i++)
     {
         if (accounts[i].account_id != 0)
         {
-            cout << accounts[i].get_account_id() << "\t\t"
-                 << accounts[i].get_customer_id() << "\t\t"
-                 << accounts[i].check_balance() << "\n";
+            accounts_count++;
+            cout << accounts[i].get_account_id() << "\t\t";
+            cout << accounts[i].get_customer_id() << "\t\t";
+            cout << accounts[i].check_balance() << endl;
         }
     }
+    if (accounts_count == 0)
+    {
+        cout << "No data found!" << endl;
+    }
     cout << "----------------------------------------\n";
+}
+
+// checking database status
+bool Account::file_exists(const string &filename)
+{
+    ifstream file(filename);
+    return file.good();
 }
 
 bool Account::validate_account(const Account accounts[], int account_id)
@@ -297,9 +331,14 @@ bool Account::validate_account(const Account accounts[], int account_id)
     return false;
 }
 
-// checking database status
-bool Account::file_exists(const string &filename)
+bool Account::validate_account_by_customerID(const Account accounts[], string customer_id)
 {
-    ifstream file(filename);
-    return file.good();
+    for (int i = 0; i < MAX_ACCOUNTS; i++)
+    {
+        if (accounts[i].get_customer_id() == customer_id)
+        {
+            return true;
+        }
+    }
+    return false;
 }

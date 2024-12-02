@@ -57,27 +57,27 @@ int Transaction::generate_transaction_id()
         {
             throw runtime_error("Error creating transactionID.txt");
         }
-        outfile << 10001; // Start from 10001
+        outfile << 10001; // start transaction_id from 10001
         outfile.close();
-        return 10001; // Return the initial ID
+        return 10001;
     }
 
     int id;
-    infile >> id; // Read the existing ID
+    infile >> id;
     infile.close();
 
-    // Increment the ID
+    // auto increment transaction_id
     id++;
 
-    // Write the new ID back to the file
+    // write transaction_id after incrementing it
     ofstream outfile("transactionID.txt");
     if (!outfile)
     {
         throw runtime_error("Error opening transactionID.txt for writing.");
     }
-    outfile << id; // Save the incremented ID
+    outfile << id;
     outfile.close();
-    return id - 1; // Return the original ID
+    return id - 1; // return transaction_id
 }
 
 // create process while doing transaction
@@ -87,21 +87,20 @@ pid_t Transaction::create_process(int transaction_id, int account_id, const stri
 
     if (pid < 0)
     {
-        // Fork failed
-        perror("fork");
+        cout << "fork() failed!" << endl;
         return -1;
     }
     else if (pid == 0)
     {
-        // Child process
+        // child process
         cout << "Child process started (PID: " << getpid() << ", Transaction ID: " << transaction_id << ")\n";
 
-        // Simulate transaction processing
+        // transaction processing
         cout << "Simulating " << operation_type << " of " << amount << " for account " << account_id << "\n";
-        sleep(2); // Simulate some work
+        sleep(2);
 
         cout << "Child process finished.\n";
-        exit(0); // Child process exits
+        exit(0);
     }
     else
     {
@@ -111,13 +110,10 @@ pid_t Transaction::create_process(int transaction_id, int account_id, const stri
     }
 }
 
-/*-----------PAGING------------*/
-// Add transaction to memory (FIFO page replacement)
 void Transaction::add_transaction_to_memory(const Transaction &transaction)
 {
-    static int next_page = 0; // Keeps track of the next available page (FIFO)
+    static int next_page = 0; // keep track of the next available page
 
-    // If memory is full, replace the oldest transaction (FIFO)
     if (next_page >= MAX_PAGES)
     {
         cout << "Memory is full, replacing the oldest transaction (Page " << next_page % MAX_PAGES << ").\n";
@@ -127,7 +123,7 @@ void Transaction::add_transaction_to_memory(const Transaction &transaction)
     next_page++;
 }
 
-// Log all transactions currently in memory to a file
+// logs all transactions to database(transactions.txt)
 void Transaction::log_transactions_from_memory(const string &filename)
 {
     for (int i = 0; i < MAX_PAGES; i++)
@@ -142,18 +138,17 @@ void Transaction::log_transactions_from_memory(const string &filename)
 // save all data into database(transactions.txt)
 void Transaction::log_transaction(const Transaction &transaction, const string &filename)
 {
-    ofstream file(filename, ios::app); // Open in append mode
+    ofstream file(filename, ios::app); // overwriting the file
     if (!file)
     {
         throw runtime_error("Error opening transaction log file.");
     }
 
-    // Log the transaction details
-    file << transaction.get_transaction_id() << ","
-         << transaction.get_account_id() << ","
-         << transaction.get_operation_type() << ","
-         << transaction.get_amount() << ","
-         << transaction.get_timestamp() << endl;
+    file << transaction.get_transaction_id() << ",";
+    file << transaction.get_account_id() << ",";
+    file << transaction.get_operation_type() << ",";
+    file << transaction.get_amount() << ",";
+    file << transaction.get_timestamp() << endl;
 
     file.close();
     cout << "Transaction logged successfully." << endl;
