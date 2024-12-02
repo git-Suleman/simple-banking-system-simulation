@@ -258,19 +258,17 @@ int Account::generate_account_id()
     return id - 1; // return account_id
 }
 
-// account deletion ... // needed to be checked
+// account deletion
 bool Account::delete_account(Account accounts[], int account_id)
 {
-    for (int i = 0; i < MAX_ACCOUNTS; i++)
+    int acc_id = account_id % 1000;
+    if (accounts[acc_id].get_account_id() == account_id)
     {
-        if (accounts[i].get_account_id() == account_id)
-        {
-            for (int j = i; j < MAX_ACCOUNTS - 1; j++)
-            {
-                accounts[j] = accounts[j + 1];
-            }
-            return true;
-        }
+        accounts[acc_id].account_id = 0;
+        accounts[acc_id].balance = 0;
+        accounts[acc_id].customer_id = "\0";
+        cout << "Account Deleted Successfully!" << endl;
+        return true;
     }
     return false;
 }

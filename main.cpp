@@ -202,7 +202,7 @@ int main()
                 }
                 else
                 {
-                    cout << "Account not found.\n";
+                    cout << "Account not found" << endl;
                 }
             }
             else if (choice == "6")
@@ -248,7 +248,7 @@ int main()
             }
             else if (choice == "9")
             {
-                cout << "Terminating program\n";
+                cout << "Terminating program" << endl;
                 break;
             }
             else
@@ -260,7 +260,7 @@ int main()
                     break;
                 }
                 valid_count++;
-                cout << "Invalid choice. Please try again.\n";
+                cout << "Invalid input!, try Again!" << endl;
             }
         }
     }
