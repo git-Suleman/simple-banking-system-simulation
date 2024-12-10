@@ -123,7 +123,7 @@ int main()
                 if (amount > 0)
                 {
                     Account &acc = accounts[account_id % 1000];
-                    acc.withdraw(amount);
+                    acc.deposit(amount);
                     Account::save_all_accounts(accounts, filename);
                 }
                 else
@@ -196,7 +196,14 @@ int main()
                     return 0;
                 }
 
-                if (Account::delete_account(accounts, account_id))
+                // need to validate if account exits
+                if (!Account::validate_account(accounts, account_id))
+                {
+                    cout << "Account doesn't exist!" << endl;
+                    return 0;
+                }
+
+                                if (Account::delete_account(accounts, account_id))
                 {
                     Account::save_all_accounts(accounts, filename);
                 }
@@ -222,12 +229,7 @@ int main()
                 }
                 else
                 {
-                    cout << "Account found" << endl;
-                    cout << "----------------------------------------------" << endl;
-                    cout << "Customer's ID: " << accounts[account_id - 1000].get_customer_id() << endl;
-                    cout << "Account's ID: " << accounts[account_id - 1000].get_account_id() << endl;
-                    cout << "Current balance: " << accounts[account_id - 1000].check_balance() << endl;
-                    cout << "----------------------------------------------" << endl;
+                    Account::search_by_account_id(accounts, account_id);
                 }
             }
             else if (choice == "7")

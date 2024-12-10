@@ -18,7 +18,7 @@ private:
     int account_id;
     string customer_id;
     int balance;
-    pthread_mutex_t mutex; // Mutex for thread-safe operations
+    pthread_mutex_t mutex; // thread-safe operations
 
     void deposit_amount(int amount);
     void withdraw_amount(int amount);
@@ -44,6 +44,9 @@ public:
     // CRUD on Accounts
     static int generate_account_id();
     static bool delete_account(Account accounts[], int account_id);
+
+    // searching accounts
+    static void search_by_account_id(const Account accounts[], const int &account_id);
     static bool search_by_customer_id(const Account accounts[], const string &cust_id);
     static void view_all_accounts(const Account accounts[]);
 

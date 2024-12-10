@@ -40,13 +40,13 @@ void Account::create_account(Account accounts[], int &count, const Account &new_
 
         if (pid == 0)
         {
-            // Child process
+            // child process
             cout << "Creating an account for Account ID: " << acc_id << endl;
-            _exit(0);
+            exit(0);
         }
         else if (pid > 0)
         {
-            // Parent process
+            // parent process
             accounts[acc_id % 1000] = new_account;
             count++;
             cout << "Account created!!!" << endl;
@@ -79,10 +79,10 @@ void Account::deposit(int amount)
 
     // process creation
     pid_t process_id = Transaction::create_process(transaction_id, account_id, "Deposit", amount);
-    process_table.addProcess(process_id, transaction_id);
+    process_table.add_process(process_id, transaction_id);
 
     // process scheduling
-    process_table.runRoundRobin();
+    process_table.run_round_robin();
 
     // multi-threading
     thread deposit(&Account::deposit_amount, this, amount);
@@ -92,12 +92,12 @@ void Account::deposit(int amount)
     Transaction::log_transaction(transaction, "transactions.txt");
     Transaction::log_transactions_from_memory("transactions.txt");
 
-    process_table.printProcesses();
+    process_table.print_processes();
 
     pthread_mutex_unlock(&mutex);
 
     // remove process at completing transaction
-    process_table.waitAndRemoveProcess(process_id);
+    process_table.wait_and_remove_process(process_id);
 
     cout << "Deposit successful. New Balance: " << balance << endl;
 }
@@ -120,10 +120,10 @@ void Account::withdraw(int amount)
 
     // process creation
     pid_t process_id = Transaction::create_process(transaction_id, account_id, "Withdrawal", amount);
-    process_table.addProcess(process_id, transaction_id);
+    process_table.add_process(process_id, transaction_id);
 
     // process scheduling
-    process_table.runRoundRobin();
+    process_table.run_round_robin();
 
     // multi-threading
     thread withdraw(&Account::withdraw_amount, this, amount);
@@ -133,12 +133,12 @@ void Account::withdraw(int amount)
     Transaction::log_transaction(transaction, "transactions.txt");
     Transaction::log_transactions_from_memory("transactions.txt");
 
-    process_table.printProcesses();
+    process_table.print_processes();
 
     pthread_mutex_unlock(&mutex);
 
     // remove process at completing transaction
-    process_table.waitAndRemoveProcess(process_id);
+    process_table.wait_and_remove_process(process_id);
 
     cout << "Withdrawal successful. New Balance: " << balance << endl;
 }
@@ -273,6 +273,16 @@ bool Account::delete_account(Account accounts[], int account_id)
     return false;
 }
 
+void Account::search_by_account_id(const Account accounts[], const int &account_id)
+{
+    cout << "Account found" << endl;
+    cout << "----------------------------------------------" << endl;
+    cout << "Customer's ID: " << accounts[account_id - 1000].get_customer_id() << endl;
+    cout << "Account's ID: " << accounts[account_id - 1000].get_account_id() << endl;
+    cout << "Current balance: " << accounts[account_id - 1000].check_balance() << endl;
+    cout << "----------------------------------------------" << endl;
+}
+
 bool Account::search_by_customer_id(const Account accounts[], const string &cust_id)
 {
     for (int i = 0; i < MAX_ACCOUNTS; i++)
@@ -319,14 +329,20 @@ bool Account::file_exists(const string &filename)
 
 bool Account::validate_account(const Account accounts[], int account_id)
 {
-    for (int i = 0; i < MAX_ACCOUNTS; i++)
+    int acc_id = account_id % 1000;
+    if (acc_id > 99 || acc_id <= 0)
     {
-        if (accounts[i].get_account_id() == account_id)
-        {
-            return true;
-        }
+        return false;
     }
-    return false;
+
+    if (accounts[acc_id].get_account_id() == account_id)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool Account::validate_account_by_customerID(const Account accounts[], string customer_id)

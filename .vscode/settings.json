@@ -5,6 +5,8 @@
         "ios": "cpp",
         "iostream": "cpp",
         "*.rmd": "markdown",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     }
 }

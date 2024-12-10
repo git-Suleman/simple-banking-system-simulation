@@ -30,17 +30,18 @@ public:
     ~ProcessTable();
 
     // process related methods
-    bool addProcess(pid_t pid, int transaction_id);
-    void printProcesses();
-    void waitAndRemoveProcess(pid_t pid);
+    bool add_process(pid_t pid, int transaction_id);
+    void print_processes();
+    void wait_and_remove_process(pid_t pid);
 
     // scheduling algorithm
-    void runRoundRobin();
-    void printGanttChart();
+    void run_round_robin();
+    void print_gantt_chart();
 
     // inter-process communication (IPC)
-    void setupPipe(Process &process);
-    void cleanupPipe(Process &process);
+    void setup_pipe(Process &process);
+    void cleanup_pipe(Process &process);
+    void read_pipe_message(Process &process);
 };
 
 #endif
